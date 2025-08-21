@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerador de Laudo Técnico - Robôs</title>
+  <style>
+    /* --- ESTILO GERAL E CORES --- */
+    :root {
+      --cor-primaria: #007bff;
+      /*--cor-fundo: #f4f6fz;*/
+      --cor-fundo: #8ad6cf;
+      --cor-card: #ffffff;
+      --cor-borda: #dee2e6;
+      --cor-sombra: rgba(0, 0, 0, 0.1);
+      --cor-texto: #495057;
+      --cor-titulo: #212529;
+    }
+
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: var(--cor-fundo);
+      color: var(--cor-texto);
+    }
+
+    /* --- ESTRUTURA DO FORMULÁRIO --- */
+    .form-section {
+      border: 1px solid var(--cor-borda); 
+      padding: 20px; 
+      margin: 20px 0; 
+      border-radius: 8px; 
+      background-color: var(--cor-card);
+      box-shadow: 0 4px 8px var(--cor-sombra);
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label, .form-group > span {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    input[type="text"], input[type="date"], input[type="time"], select, textarea {
+      width: 100%;
+      padding: 12px 15px; 
+      border-radius: 8px;
+      border: 1px solid var(--cor-borda);
+      font-size: 16px;
+      box-sizing: border-box; /* Garante que o padding não aumente a largura */
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    .checkbox-group label {
+      display: inline-flex;
+      width: auto;
+      margin-right: 20px;
+      font-weight: normal;
+    }
+
+    /* --- BOTÃO PRINCIPAL --- */
+    #btnGerarLaudo {
+      width: 100%;
+      padding: 15px;
+      font-size: 18px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s ease-in-out;
+    }
+    #btnGerarLaudo:hover {
+      background-color: #218838;
+    }
+
+    /* --- SEÇÃO DE PEÇAS (DO APP ANTIGO) --- */
+    .peca-img {
+      width: 90px; height: 90px; margin-right: 15px; object-fit: cover;
+      border-radius: 8px; border: 1px solid var(--cor-borda);
+    }
+    #pecasLista label {
+      display: flex; width: 100%; align-items: center; margin-bottom: 10px;
+      padding: 10px; border-radius: 8px; border: 1px solid transparent;
+      transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+    }
+    #pecasLista label:hover {
+      background-color: #f8f9fa; border-color: var(--cor-borda);
+    }
+    #pecasLista h4 {
+      margin-top: 20px; margin-bottom: 15px; padding-bottom: 8px;
+      border-bottom: 2px solid var(--cor-primaria); color: var(--cor-titulo);
+    }
+    #pecasLista h4:first-child { margin-top: 0; }
+    #pecasLista h4:first-child { margin-top: 0; }
+    
+    .peca-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 15px;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .peca-info {
+      /* Não precisa de regras de layout aqui */
+    }
+
+    .opcoes-peca {
+      display: none; /* Começa escondido */
+      align-items: center;
+      gap: 20px;
+    }
+
+    .cor-selecao {
+      display: flex;
+      gap: 5px;
+      border: 1px solid var(--cor-borda);
+      padding: 5px;
+      border-radius: 8px;
+      background-color: #f8f9fa; /* Fundo sutil para a caixa de seleção */
+    }
+
+    /* Estilo padrão para os botões de opção (V, A, R) */
+    .cor-selecao label {
+      font-weight: normal; /* Agora o padrão é normal */
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: all 0.2s ease-in-out;
+    }
+
+    /* Efeito ao passar o mouse por cima de uma opção NÃO selecionada */
+    .cor-selecao label:hover {
+      background-color: #e9ecef;
+    }
+
+    /* Estilos para o botão SELECIONADO */
+    .cor-selecao input[value="verde"]:checked + label {
+      background-color: #d4edda;  /* Fundo verde */
+      color: #155724;             /* Texto verde escuro */
+      border-color: #b1dfbb;      /* Borda verde */
+      font-weight: bold;          /* Texto em negrito */
+    }
+    .cor-selecao input[value="azul"]:checked + label {
+      background-color: #cce5ff;  /* Fundo azul */
+      color: #004085;             /* Texto azul escuro */
+      border-color: #b8daff;      /* Borda azul */
+      font-weight: bold;          /* Texto em negrito */
+    }
+    .cor-selecao input[value="rosa"]:checked + label {
+      background-color: #ebacdd;  /* Fundo rosa */
+      color: #ed3cc5;             /* Texto rosa escuro */
+      border-color: #f5c6cb;      /* Borda rosa */
+      font-weight: bold;          /* Texto em negrito */
+    }
+
+    /* Esconde o botão de rádio original */
+    .cor-selecao input[type="radio"] {
+      display: none;
+    }
+
+    /* NOVA REGRA PARA A LABEL "QUANTIDADE:" */
+    .quantidade-label {
+      display: flex;
+      align-items: center;
+      gap: 8px; /* Espaço entre o texto "Quantidade:" e o campo */
+      font-weight: normal;
+    }
+
+    .quantidade-input {
+      width: 40px;
+      padding: 8px;
+      text-align: center;
+    }
+
+    /* --- PREVIEW DAS FOTOS --- */
+    #previewFotos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .preview-img {
+      width: 150px;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid var(--cor-borda);
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Gerador de Laudo Técnico</h1>
+
+  <form id="laudoForm">
+    <div class="form-section">
+      <h2>Informações Gerais</h2>
+      <div class="form-group">
+        <label for="cliente">Cliente:</label>
+        <input type="text" id="cliente" required>
+      </div>
+      <div class="form-group">
+        <label for="ra">RA:</label>
+        <input type="text" id="ra" required>
+      </div>
+      <div class="form-group">
+        <label for="dataEntrada">Data de Entrada:</label>
+        <input type="date" id="dataEntrada" required>
+      </div>
+      <div class="form-group">
+        <label for="horaEntrada">Hora de Entrada:</label>
+        <input type="time" id="horaEntrada" required>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h2>Dados do Equipamento</h2>
+      <div class="form-group">
+        <label for="modelo">Selecione o Modelo:</label>
+        <select id="modelo" required>
+          <option value="">-- Escolha --</option>
+          <option value="RB2">RB2</option>
+          <option value="RB6">RB6</option>
+          <option value="RB4i 220V">RB4i 220V</option>
+          <option value="RB4i 110V">RB4i 110V</option>
+          <option value="Liberty200">Liberty200</option>
+          <option value="WAVE100">WAVE100</option>
+          <option value="WAVE100 2X2">WAVE100 2X2</option>
+        </select>
+      </div>
+       <div class="form-group">
+        <label for="codRobo">Código do Robô:</label>
+        <input type="text" id="codRobo">
+      </div>
+      <div class="form-group">
+        <label for="codFonte">Código da Fonte:</label>
+        <input type="text" id="codFonte">
+      </div>
+      <div class="form-group">
+        <label for="codMotor">Código do Motor:</label>
+        <input type="text" id="codMotor">
+      </div>
+      <div class="form-group">
+        <label for="codBateria">Código da Bateria:</label>
+        <input type="text" id="codBateria">
+      </div>
+
+      <div class="form-group">
+        <label for="garantia">Está em Garantia?:</label>
+        <select id="garantia" required>
+         <option value="">-- Escolha --</option>
+         <option value="SIM">SIM</option>
+         <option value="NÃO">NÃO</option>
+      </select>
+      </div>
+
+      <div class="form-group">
+        <span>Acessórios Inclusos:</span>
+        <div class="checkbox-group">
+          <label><input type="checkbox" name="acessorios" value="Caixa"> Caixa</label>
+          <label><input type="checkbox" name="acessorios" value="Caddy"> Caddy</label>
+          <label><input type="checkbox" name="acessorios" value="Fonte"> Fonte</label>
+          <label><input type="checkbox" name="acessorios" value="Filtro"> Filtro</label>
+          <label><input type="checkbox" name="acessorios" value="Controle"> Controle</label>
+          <label><input type="checkbox" name="acessorios" value="Gancho"> Gancho</label>
+          <label><input type="checkbox" name="acessorios" value="Trava Rotor"> Trava Rotor</label>
+          <label><input type="checkbox" name="acessorios" value="Carregador"> Carregador</label>
+          <label><input type="checkbox" name="acessorios" value="Manual"> Manual</label>
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-section">
+        <h2>Análise Técnica</h2>
+        <div class="form-group">
+            <label for="defeitoRelatado">Defeito Relatado pelo Cliente:</label>
+            <textarea id="defeitoRelatado" rows="4" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="obsTecnicas">Observações Técnicas:</label>
+            <textarea id="obsTecnicas" rows="6" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="obsGerais">Observações Gerais:</label>
+            <textarea id="obsGerais" rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="tempoAnalise">Tempo de Análise (em horas):</label>
+            <input type="number" id="tempoAnalise" min="0" required>
+        </div>
+
+    </div>
+
+    <div class="form-section hidden" id="pecasBox">
+        <h2>Peças Necessárias</h2>
+        <div id="pecasLista"></div>
+    </div>
+
+    <div class="form-section">
+      <h2>Fotos do Equipamento</h2>
+      <div class="form-group">
+        <label for="fotos">Carregar fotos (múltiplas):</label>
+        <input type="file" id="fotos" multiple accept="image/*">
+        <div id="previewFotos"></div>
+      </div>
+    </div>
+
+    <button type="button" id="btnGerarLaudo" onclick="gerarLaudo()">Gerar Laudo Técnico</button>
+  </form>
+
+<script>
+const pecasPorModelo = {
+    "RB6": {
+    "Componentes Principais": {
+        "022623": { nome: "Corpo RB6", imagem: "RB6/corporobo.png" },
+        "022763": { nome: "Motor RB6", imagem: "RB6/motorrb6.jpg" },
+        "022250": { nome: "Hélice", imagem: "RB6/helice.jpg" },
+        "022766": { nome: "Fonte RB6", imagem: "RB6/fonterb6.jpg" },
+        "022634": { nome: "Cabo Fonte", imagem: "RB6/cabofonte.jpg" },
+        "022629": { nome: "Cabo 18M RB6", imagem: "RB6/caborb6.jpg" },
+        "025354": { nome: "Tela Interna", imagem: "RB6/telainterna.jpg" },
+        "025335": { nome: "Correia Menor", imagem: "RB6/correiamenor.jpg" },
+        "025352": { nome: "Correia Maior", imagem: "RB6/correiamaior.jpg" },
+        "025334": { nome: "Roda", imagem: "RB6/roda.jpg" },
+        "021952": { nome: "Polia", imagem: "RB6/polia.jpg" },
+        "022627": { nome: "Flutuador Interno", imagem: "RB6/flutuador.jpg" },
+        "": { nome: "Sem anomalia", imagem: "RB6/semanomalia.jpg" },
+    },
+    "Filtro": {
+        "022247": { nome: "Cartucho Filtro", imagem: "RB6/cartuchofiltro.jpg" },
+        "022248": { nome: "Suporte Filtro", imagem: "RB6/suportefiltro.jpg" },
+        "022246": { nome: "Filtro Bag", imagem: "RB6/filtrobag.jpg" },
+        "022245": { nome: "Trava Cesto", imagem: "RB6/travacesto.jpg" },
+    },
+    "Escovas": {
+        "022814": { nome: "Escova Branca", imagem: "RB6/escovabranca.jpg" },
+        "022772": { nome: "Escova Cinza Combinada", imagem: "RB6/escovacinzacombinada.png" },
+        "025355": { nome: "Anel Escova Branco", imagem: "RB6/anelescova.jpg" }
+    }
+    },
+    "RB4i 220V": {
+    "Componentes Principais": {
+        "022666": { nome: "Tampa Filtro", imagem: "RB4/tampafiltro.jpg" },
+        "022261": { nome: "Tubo", imagem: "RB4/tubo.jpg" },
+        "022672": { nome: "Cabo 18M RB4i", imagem: "RB4/caborb4.jpg" },
+        "022673": { nome: "Rolamento Roda", imagem: "RB4/rodatraseira.png" },
+        "022685": { nome: "Roda Dianteira", imagem: "RB4/rodadianteira.jpg" },
+        "022686": { nome: "Disco Roda", imagem: "RB4/discoroda.jpg" },
+        "022262": { nome: "Escova Cinza Combinada", imagem: "RB4/escovacinzacombinada.png" },
+        "022816": { nome: "Escova Cinza", imagem: "RB4/escovacinza.jpg" },
+        "022687": { nome: "Painel Lateral", imagem: "RB4/painellateral.jpg" },
+        "022254": { nome: "Correia", imagem: "RB2/correiarb2.png" },
+        "022674": { nome: "Motor", imagem: "RB4/motorrb4.jpg" },
+        "022694": { nome: "Engrenagem Escova", imagem: "RB4/engrenagem.jpg" },
+        "022768": { nome: "Central 220V", imagem: "RB4/central.jpg" },
+        "022259": { nome: "Cesto Interno", imagem: "RB4/cestointerno.jpg" },
+        "022260": { nome: "Filtro Cartucho", imagem: "RB4/cartuchofiltro.jpg" },
+        "": { nome: "Sem anomalia", imagem: "RB6/semanomalia.jpg" },
+    }
+    },
+    "RB4i 110V": {
+    "Componentes Principais": {
+        "022666": { nome: "Tampa Filtro", imagem: "RB4/tampafiltro.jpg" },
+        "022261": { nome: "Tubo", imagem: "RB4/tubo.jpg" },
+        "022672": { nome: "Cabo 18M RB4i", imagem: "RB4/caborb4.jpg" },
+        "022673": { nome: "Rolamento Roda", imagem: "RB4/rodatraseira.png" },
+        "022685": { nome: "Roda Dianteira", imagem: "RB4/rodadianteira.jpg" },
+        "022686": { nome: "Disco Roda", imagem: "RB4/discoroda.jpg" },
+        "022262": { nome: "Escova Cinza Combinada", imagem: "RB4/escovacinzacombinada.png" },
+        "022816": { nome: "Escova Cinza", imagem: "RB4/escovacinza.jpg" },
+        "022687": { nome: "Painel Lateral", imagem: "RB4/painellateral.jpg" },
+        "022254": { nome: "Correia", imagem: "RB2/correiarb2.png" },
+        "022674": { nome: "Motor", imagem: "RB4/motorrb4.jpg" },
+        "022694": { nome: "Engrenagem Escova", imagem: "RB4/engrenagem.jpg" },
+        "022769": { nome: "Central 110V", imagem: "RB4/central.jpg" },
+        "022259": { nome: "Cesto Interno", imagem: "RB4/cestointerno.jpg" },
+        "022260": { nome: "Filtro Cartucho", imagem: "RB4/cartuchofiltro.jpg" },
+        "": { nome: "Sem anomalia", imagem: "RB6/semanomalia.jpg" },
+    }
+    },
+    "RB2": {
+    "Componentes Principais": {
+        "022635": { nome: "Tampa Filtro", imagem: "RB2/tampa.jpg" },
+        "022653": { nome: "Corpo RB6", imagem: "RB2/corporb2.jpg" },
+        "022648": { nome: "Evacuador", imagem: "RB2/evacuador.jpg" },
+        "022764": { nome: "Motor RB2", imagem: "RB2/motorrb2.jpg" },
+        "022647": { nome: "Hélice", imagem: "RB2/helice.jpg" },
+        "022257": { nome: "Engrenagem", imagem: "RB2/engrenagem.jpg" },
+        "022766": { nome: "Fonte RB2", imagem: "RB2/fonte.jpg" },
+        "022634": { nome: "Cabo Fonte", imagem: "RB2/cabofonte.jpg" },
+        "022815": { nome: "Escova Cinza", imagem: "RB2/escovacinza.jpg" },
+        "022643": { nome: "Cabo 15M RB2", imagem: "RB2/cabo15.jpg" },
+        "025333": { nome: "Boia Cabo", imagem: "RB2/boiacabo.jpg" },
+        "022254": { nome: "Correia", imagem: "RB2/correiarb2.png" },
+        "022655": { nome: "Roda Dianteira", imagem: "RB2/rodadianteira.jpg" },
+        "022654": { nome: "Tampa Roda Dianteira", imagem: "RB2/tamparodad.jpg" },
+        "022256": { nome: "Roda Traseira", imagem: "RB2/rodatraseira.jpg" },
+        "022656": { nome: "Tampa Roda Traseira", imagem: "RB2/pinoazul.jpg" },
+        "022660": { nome: "Plug Azul", imagem: "RB2/plug.jpg" },
+        "022657": { nome: "Conector Roda", imagem: "RB2/conectorroda.jpg" },
+        "022252": { nome: "Cesto Filtro", imagem: "RB2/cestofiltro.jpg" },
+        "022659": { nome: "Bypass", imagem: "RB2/bypass.jpg" },
+        "": { nome: "Sem anomalia", imagem: "RB6/semanomalia.jpg" },
+    }
+    },
+    "Liberty200": {
+    "Componentes Principais": {
+        "022252": { nome: "Filtro Combinado", imagem: "liberty/filtrocombinado.jpg" },
+        "027191": { nome: "Tampa do Filtro", imagem: "liberty/tampafiltro.jpg" },
+        "027189": { nome: "Motor", imagem: "liberty/motorl.jpg" },
+        "027211": { nome: "Correia", imagem: "liberty/correial.jpg" },
+        "027197": { nome: "Conjunto Escova Ativa", imagem: "liberty/conjuntoescova.jpg" },
+        "027195": { nome: "Roda Dianteira", imagem: "liberty/rodadianteira.jpg" },
+        "027209": { nome: "Disco da Roda", imagem: "liberty/discoroda.jpg" },
+        "022657": { nome: "Bucha da Roda", imagem: "liberty/bucharoda.jpg" },
+        "027193": { nome: "Roda Traseira", imagem: "liberty/rodatraseira.jpg" },
+        "027207": { nome: "Tampa da Roda Dianteira", imagem: "liberty/tamparodad.jpg" },
+        "027199": { nome: "Escova Ativa", imagem: "liberty/escovaativa.jpg" },
+        "027183": { nome: "Carregador", imagem: "liberty/carregador.jpg" },
+        "027205": { nome: "Gancho", imagem: "liberty/gancho.jpg" },
+        "027185": { nome: "Bateria", imagem: "liberty/bateria.jpg" },
+        "000000": { nome: "Atualização no software", imagem: "liberty/atualizacao.jpg" },
+        "": { nome: "Sem anomalia", imagem: "RB6/semanomalia.jpg" },
+    }
+    },
+    "WAVE100": {
+      "Componentes Principais": {
+        /*GERAL PARA OS WAVES*/
+        "022263": { nome: "Manipulo", imagem: "WAVE100/manipulo.jpg" },
+        "025343": { nome: "Painel Lateral Direito", imagem: "WAVE100/paineldir.jpg" },
+        "022707": { nome: "Adaptador", imagem: "WAVE100/adaptador.jpg" },
+        "022239": { nome: "Polia", imagem: "WAVE100/polia.jpg" },
+        "022235": { nome: "Conexão Roda", imagem: "WAVE100/conexaoroda.jpg" },
+        "025352": { nome: "Correia", imagem: "RB6/correiamaior.jpg" },
+        "022268": { nome: "Adaptador Eixo", imagem: "WAVE100/adaptadoreixo.jpg" },
+        "022715": { nome: "Placa Anti-Retorno", imagem: "WAVE100/antiretorno.jpg" },
+        "022716": { nome: "Filtro Bag", imagem: "WAVE100/filtrobag.jpg" },
+        "022271": { nome: "Suporte Filtro", imagem: "WAVE100/suportefiltro.jpg" },
+        "025349": { nome: "Bracket", imagem: "WAVE100/bracket.jpg" },
+        "022727": { nome: "Tela Filtro", imagem: "WAVE100/telafiltro.jpg" },
+        "025350": { nome: "Painel Lateral Esquerdo", imagem: "WAVE100/painelesquerdo.jpg" },
+        "022744": { nome: "Tampa Rotor", imagem: "WAVE100/tamparotor.jpg" },
+        "022770": { nome: "Controle Remoto", imagem: "WAVE100/controle.jpg" },
+        "025355": { nome: "Anel Escova Branco", imagem: "RB6/anelescova.jpg" },
+        "022267": { nome: "Conjunto Roda", imagem: "WAVE100/conjuntoroda.jpg" },
+        "022817": { nome: "Escova Combinada Cinza", imagem: "WAVE100/escovacinzawv.png" },
+        /*ESPECÍFICO*/
+        "022272": { nome: "Cabo Robô", imagem: "WAVE100/cabowv.jpg" },
+        "023105": { nome: "Motor Wave100", imagem: "WAVE100/motorwv.png" },
+        "022767": { nome: "Central Wave100", imagem: "WAVE100/centralwv.jpg" },
+        "022634": { nome: "Cabo Fonte", imagem: "RB6/cabofonte.jpg" },
+        "": { nome: "Sem anomalia", imagem: "RB6/semanomalia.jpg" },
+      },
+      "Caddy": {
+        "022730": { nome: "Trava Suporte", imagem: "WAVE100/travasup.jpg" },
+        "022728": { nome: "Alavanca", imagem: "WAVE100/alavanca.jpg" },
+        "022737": { nome: "Base", imagem: "WAVE100/base.jpg" },
+        "022729": { nome: "Suporte Alavanca", imagem: "WAVE100/suportealavanca.jpg" },
+        "022731": { nome: "Encaixe Perfil", imagem: "WAVE100/encaixe.jpg" },
+        "022732": { nome: "Conjunto Parafuso", imagem: "WAVE100/cjtopara.jpg" },
+        "022733": { nome: "Perfil Carro", imagem: "WAVE100/perfil.jpg" },
+        "022735": { nome: "Roda", imagem: "WAVE100/rodacarro.png" },
+        "022736": { nome: "Tampa Roda", imagem: "WAVE100/tampacarroroda.jpg" },
+      }
+    },
+    "WAVE100 2X2": {
+      "Componentes Principais": {
+        /*GERAL PARA OS WAVES*/
+        "024302": { nome: "Manipulo", imagem: "WAVE1002X2/manipulo.jpg" },
+        "025343": { nome: "Painel Lateral Direito", imagem: "WAVE100/paineldir.jpg" },
+        "022707": { nome: "Adaptador", imagem: "WAVE100/adaptador.jpg" },
+        "022239": { nome: "Polia", imagem: "WAVE100/polia.jpg" },
+        "022235": { nome: "Conexão Roda", imagem: "WAVE100/conexaoroda.jpg" },
+        "025352": { nome: "Correia", imagem: "RB6/correiamaior.jpg" },
+        "022268": { nome: "Adaptador Eixo", imagem: "WAVE100/adaptadoreixo.jpg" },
+        "022715": { nome: "Placa Anti-Retorno", imagem: "WAVE100/antiretorno.jpg" },
+        "022716": { nome: "Filtro Bag", imagem: "WAVE100/filtrobag.jpg" },
+        "022271": { nome: "Suporte Filtro", imagem: "WAVE100/suportefiltro.jpg" },
+        "025349": { nome: "Bracket", imagem: "WAVE100/bracket.jpg" },
+        "022727": { nome: "Tela Filtro", imagem: "WAVE100/telafiltro.jpg" },
+        "025350": { nome: "Painel Lateral Esquerdo", imagem: "WAVE100/painelesquerdo.jpg" },
+        "022744": { nome: "Tampa Rotor", imagem: "WAVE100/tamparotor.jpg" },
+        "022770": { nome: "Controle Remoto", imagem: "WAVE100/controle.jpg" },
+        "025355": { nome: "Anel Escova Branco", imagem: "RB6/anelescova.jpg" },
+        "022267": { nome: "Conjunto Roda", imagem: "WAVE100/conjuntoroda.jpg" },
+        "022817": { nome: "Escova Combinada Cinza", imagem: "WAVE100/escovacinzawv.png" },
+        /*ESPECÍFICO*/
+        "022765": { nome: "Motor Wave100 2X2", imagem: "WAVE1002X2/motor2x2.jpg" },
+        "023732": { nome: "Cabo Wave100 2X2", imagem: "WAVE1002X2/cabo2x2.png" },
+        "024304": { nome: "Fonte Wave100 2X2", imagem: "WAVE1002X2/fonte2x2.jpg" },
+        "022634": { nome: "Cabo Fonte", imagem: "RB6/cabofonte.jpg" },
+        "": { nome: "Sem anomalia", imagem: "RB6/semanomalia.jpg" },
+      },
+      "Caddy": {
+        "022730": { nome: "Trava Suporte", imagem: "WAVE100/travasup.jpg" },
+        "022728": { nome: "Alavanca", imagem: "WAVE100/alavanca.jpg" },
+        "022737": { nome: "Base", imagem: "WAVE100/base.jpg" },
+        "022729": { nome: "Suporte Alavanca", imagem: "WAVE100/suportealavanca.jpg" },
+        "022731": { nome: "Encaixe Perfil", imagem: "WAVE100/encaixe.jpg" },
+        "022732": { nome: "Conjunto Parafuso", imagem: "WAVE100/cjtopara.jpg" },
+        "022733": { nome: "Perfil Carro", imagem: "WAVE100/perfil.jpg" },
+        "022735": { nome: "Roda", imagem: "WAVE100/rodacarro.png" },
+        "022736": { nome: "Tampa Roda", imagem: "WAVE100/tampacarroroda.jpg" },
+      }
+    }
+};
+
+const GOOGLE_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzCfu6XW3hI3uuKaQj5DCCDKxDlsW1IdRketmDlWtcv8sE8KF1wk28VAmHwm1IsMbxY/exec';
+const UPLOAD_TOKEN      = 'MEU_TOKEN_SEGURO_123';
+
+document.getElementById("modelo").addEventListener("change", function() {
+  const modelo = this.value;
+  const pecasBox = document.getElementById("pecasBox");
+  const lista = document.getElementById("pecasLista");
+  lista.innerHTML = "";
+
+  if (modelo && pecasPorModelo[modelo]) {
+    pecasBox.classList.remove("hidden");
+    const pecasDoModelo = pecasPorModelo[modelo];
+    
+    function criarHtmlPeca(codigo, peca) {
+      // --- A ESTRUTURA HTML FOI CORRIGIDA AQUI ---
+      // Agora o <input> vem ANTES da <label>, permitindo que o CSS funcione
+      return `
+        <div class="peca-item">
+          <label class="peca-info">
+            <input type="checkbox" value="${codigo}" data-nome="${peca.nome}" onchange="togglePecaOpcoes(this)">
+            <img src="imagens/${peca.imagem}" class="peca-img" alt="${peca.nome}">
+            ${peca.nome}
+          </label>
+          <div class="opcoes-peca">
+            <label class="quantidade-label">
+              Quantidade:
+              <input type="number" class="quantidade-input" value="1" min="1">
+            </label>
+            <div class="cor-selecao">
+              <input type="radio" name="cor_${codigo}" value="verde" id="cor_v_${codigo}" checked>
+              <label for="cor_v_${codigo}">V</label>
+
+              <input type="radio" name="cor_${codigo}" value="azul" id="cor_a_${codigo}">
+              <label for="cor_a_${codigo}">A</label>
+
+              <input type="radio" name="cor_${codigo}" value="rosa" id="cor_r_${codigo}">
+              <label for="cor_r_${codigo}">R</label>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    const primeiraChave = Object.keys(pecasDoModelo)[0];
+    if (pecasDoModelo[primeiraChave] && typeof pecasDoModelo[primeiraChave].nome === 'undefined') {
+      for (const [nomeCategoria, pecasDaCategoria] of Object.entries(pecasDoModelo)) {
+        lista.innerHTML += `<h4>${nomeCategoria}</h4>`;
+        for (const [codigo, peca] of Object.entries(pecasDaCategoria)) {
+          lista.innerHTML += criarHtmlPeca(codigo, peca);
+        }
+      }
+    } else {
+      for (const [codigo, peca] of Object.entries(pecasDoModelo)) {
+        lista.innerHTML += criarHtmlPeca(codigo, peca);
+      }
+    }
+  } else {
+    pecasBox.classList.add("hidden");
+  }
+});
+
+// Nova função aprimorada para habilitar/desabilitar as opções da peça
+function togglePecaOpcoes(checkbox) {
+    const container = checkbox.closest('.peca-item');
+    const opcoes = container.querySelector('.opcoes-peca');
+    if (checkbox.checked) {
+        opcoes.style.display = 'flex';
+    } else {
+        opcoes.style.display = 'none';
+    }
+}
+
+function enviarParaPlanilha(laudoData) {
+  // Monta payload 'limpo' para o endpoint
+  const payload = {
+    token: UPLOAD_TOKEN,
+    ra: laudoData.ra,
+    cliente: laudoData.cliente,
+    equipamento: laudoData.equipamento,
+    dataEntrada: laudoData.dataEntrada,
+    horaEntrada: laudoData.horaEntrada,
+    acessorios: laudoData.acessorios,
+    codRobo: laudoData.codRobo,
+    codFonte: laudoData.codFonte,
+    codMotor: laudoData.codMotor,
+    codBateria: laudoData.codBateria,
+    tempoAnalise: laudoData.tempoAnalise,
+    defeitoRelatado: laudoData.defeitoRelatado,
+    obsTecnicas: laudoData.obsTecnicas,
+    obsGerais: laudoData.obsGerais,
+    // Enviamos o array de peças exatamente como você já monta:
+    pecasSelecionadas: laudoData.pecasSelecionadas
+  };
+
+  // Usamos 'text/plain' para evitar preflight CORS no Apps Script
+  return fetch(GOOGLE_WEBAPP_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.text())
+  .then(txt => {
+    console.log('Resposta do Sheets:', txt);
+    // Opcional: feedback amigável
+    try {
+      const res = JSON.parse(txt);
+      if (res.ok) {
+        alert('Dados enviados para a planilha com sucesso!');
+      } else {
+        alert('Falha ao enviar para a planilha: ' + (res.error || 'Erro desconhecido'));
+      }
+    } catch {
+      // Se não veio JSON, só registra
+      alert('Upload concluído (sem JSON legível). Verifique a planilha.');
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Erro ao enviar para a planilha: ' + err);
+  });
+}
+
+// Lógica para preview das imagens
+const imagensParaLaudo = [];
+document.getElementById("fotos").addEventListener("change", function(event) {
+    const preview = document.getElementById("previewFotos");
+    preview.innerHTML = "";
+    imagensParaLaudo.length = 0; // Limpa o array
+
+    for (const file of event.target.files) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.createElement("img");
+            img.src = e.target.result;
+            img.classList.add("preview-img");
+            preview.appendChild(img);
+            imagensParaLaudo.push(e.target.result); // Armazena a imagem em base64
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+
+// SUBSTITUA A SUA FUNÇÃO 'gerarLaudo' INTEIRA PELA VERSÃO CORRIGIDA E COMPLETA
+function gerarLaudo() {
+    // 1. VALIDAÇÃO (código mantido, pois está correto)
+    const erros = [];
+    const cliente = document.getElementById("cliente").value.trim();
+    if (cliente === '') erros.push("O campo 'Cliente' é obrigatório.");
+    if (document.getElementById("ra").value.trim() === '') erros.push("O campo 'RA' é obrigatório.");
+    if (document.getElementById("dataEntrada").value === '') erros.push("O campo 'Data de Entrada' é obrigatório.");
+    if (document.getElementById("horaEntrada").value === '') erros.push("O campo 'Hora de Entrada' é obrigatório.");
+    if (document.getElementById("defeitoRelatado").value.trim() === '') erros.push("O campo 'Defeito Relatado pelo Cliente' é obrigatório.");
+    if (document.getElementById("obsTecnicas").value.trim() === '') erros.push("O campo 'Observações Técnicas' é obrigatório.");
+    if (imagensParaLaudo.length === 0) erros.push("É necessário anexar pelo menos uma foto.");
+    const tempoAnalise = document.getElementById("tempoAnalise").value;
+    if (tempoAnalise === '' || tempoAnalise < 0) erros.push("O campo 'Tempo de Análise' é obrigatório.");
+
+    const garantia = document.getElementById("garantia").value;
+    if (garantia === '') erros.push("É obrigatório selecionar se o produto está em 'Garantia'.");
+
+    const pecasSelecionadas = document.querySelectorAll('#pecasLista input[type="checkbox"]:checked');
+    const pecasBoxVisivel = !document.getElementById('pecasBox').classList.contains('hidden');
+
+    if (pecasBoxVisivel && pecasSelecionadas.length === 0) {
+      erros.push("É obrigatório selecionar pelo menos uma peça (ou a opção 'Sem anomalia').");
+    }
+
+    if (erros.length > 0) {
+        alert("Por favor, preencha os seguintes campos antes de gerar o laudo:\n\n- " + erros.join("\n- "));
+        return;
+    }
+
+    // 2. Mapeamento de cores (código mantido)
+    const coresMap = {
+        verde: { background: '#21b92d', text: '#000000' },
+        azul: { background: '#205fe1', text: '#000000' },
+        rosa: { background: '#ff00ff', text: '#000000' }
+    };
+
+    const dataGeracao = new Date().toLocaleDateString('pt-BR');
+
+    // 3. Coleta de dados (código mantido)
+    const laudoData = {
+        ra: document.getElementById("ra").value,
+        dataEntrada: new Date(document.getElementById("dataEntrada").value).toLocaleDateString('pt-BR', {timeZone: 'UTC'}),
+        horaEntrada: document.getElementById("horaEntrada").value,
+        cliente: cliente,
+        equipamento: document.getElementById("modelo").value,
+        codRobo: document.getElementById("codRobo").value,
+        codFonte: document.getElementById("codFonte").value,
+        codMotor: document.getElementById("codMotor").value,
+        codBateria: document.getElementById("codBateria").value,
+        acessorios: Array.from(document.querySelectorAll('input[name="acessorios"]:checked')).map(el => el.value).join(', ') || 'Nenhum',
+        defeitoRelatado: document.getElementById("defeitoRelatado").value,
+        obsTecnicas: document.getElementById("obsTecnicas").value.replace(/\n/g, '<br>'),
+        obsGerais: document.getElementById("obsGerais").value.replace(/\n/g, '<br>'),
+        pecasSelecionadas: Array.from(document.querySelectorAll('#pecasLista input[type="checkbox"]:checked')).map(el => {
+            const container = el.closest('.peca-item');
+            const quantidadeInput = container.querySelector('.quantidade-input');
+            const corInput = container.querySelector('input[name="cor_' + el.value + '"]:checked');
+            return { codigo: el.value, nome: el.dataset.nome, quantidade: quantidadeInput.value, cor: corInput ? corInput.value : 'verde' };
+        }),
+        imagens: imagensParaLaudo,
+        dataGeracao: dataGeracao, 
+        tempoAnalise: tempoAnalise,
+        garantia: garantia
+    };
+    
+    // REMOVEMOS O ENVIO AUTOMÁTICO DAQUI
+    // enviarParaPlanilha(laudoData); 
+
+    const basePath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+    const caminhoImagemLegenda = basePath + 'imagens/tabelacores.png';
+    const caminhoLogo = basePath + 'imagens/logolaudo.png';
+
+    // 4. Geração da nova janela (HTML COMPLETO E CORRIGIDO)
+    const novaJanela = window.open('', '_blank');
+    novaJanela.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Laudo Técnico - RA ${laudoData.ra}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 0; background-color: #fff; color: #333; }
+            .container { max-width: 800px; margin: 20px auto; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 14px; }
+            th { background-color: #e9ecef; font-weight: bold; }
+            .section { margin-bottom: 30px; }
+            .section h2 {
+              font-size: 14px; font-weight: bold; color: #fff;
+              background-color: #002060; padding: 8px;
+              margin: 0 0 15px 0; border-radius: 4px;
+            }
+            .fotos-grid {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 10px; margin-top: 10px;
+            }
+            .fotos-grid img { 
+              width: 100%; height: 5cm; object-fit: contain; border-radius: 4px; 
+              border: 1px solid #ccc; background-color: #f9f9f9; 
+            }
+            .header-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; border: 2px solid #000; }
+            .header-table td { border: 1px solid #000; padding: 5px; vertical-align: middle; }
+            .logo-cell { width: 200px; text-align: center; padding: 10px; }
+            .logo-cell img { max-width: 180px; height: auto; }
+            .info-table { width: 100%; }
+            .info-table td { border: 1px solid #000; padding: 8px; font-size: 14px; }
+            .company-name { 
+              background-color: #002060; color: white; font-weight: bold; 
+              text-align: center; font-size: 18px; padding: 8px; 
+            }
+            .info-grid { 
+              display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+              padding: 15px; border: 1px solid #eee; border-radius: 4px;
+            }
+            .info-item { padding-bottom: 8px; border-bottom: 1px dotted #ccc; font-size: 14px; }
+            .info-item span { font-weight: bold; }
+            p { font-size: 14px; line-height: 1.6; margin-top: 0;}
+            .assinaturas-section { display: flex; justify-content: space-around; margin-top: 80px; text-align: center; }
+            .assinatura-box { width: 300px; }
+            .assinatura-linha { border-top: 1px solid #000; margin-top: 5px; padding-top: 5px; }
+            .tempo-analise { text-align: right; font-weight: bold; color: red; font-size: 16px; margin-top: 20px; }
+            .classegarantia { text-align: right; font-weight: bold; color: black; font-size: 16px; margin-top: 20px; }
+            .button-container { text-align: center; margin-top: 30px; }
+            .button { 
+              padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; 
+              font-size: 16px; color: white; margin: 0 10px; 
+            }
+            .print-btn { background-color: #007bff; }
+            .save-btn { background-color: #28a745; }
+            @media print { 
+              .no-print { display: none; }
+              body { margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              .section h2 { background-color: #002060 !important; color: #fff !important; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <table class="header-table">
+              <tr>
+                <td class="logo-cell"><img src="${caminhoLogo}" alt="Logo da Empresa"></td>
+                <td>
+                  <table class="info-table">
+                    <tr><td class="company-name" colspan="2">SODRAMAR INDUSTRIA E COMERCIO LTDA</td></tr>
+                    <tr>
+                        <td><strong>Laudo técnico</strong></td>
+                        <td rowspan="2" style="text-align:center; vertical-align: middle;">${laudoData.dataGeracao}</td>
+                    </tr>
+                    <tr><td><strong>RA:</strong> ${laudoData.ra}</td></tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <div class="section">
+              <h2>DADOS DO PRODUTO</h2>
+              <div class="info-grid">
+                <div class="info-item"><span>Equipamento:</span> ${laudoData.equipamento}</div>
+                <div class="info-item"><span>Data de Entrada:</span> ${laudoData.dataEntrada}</div>
+                <div class="info-item"><span>Hora de Entrada:</span> ${laudoData.horaEntrada}</div>
+                <div class="info-item"><span>Cliente:</span> ${laudoData.cliente}</div>
+                <div class="info-item"><span>Código do Robô:</span> ${laudoData.codRobo || 'N/A'}</div>
+                <div class="info-item"><span>Código da Fonte:</span> ${laudoData.codFonte || 'N/A'}</div>
+                <div class="info-item"><span>Código do Motor:</span> ${laudoData.codMotor || 'N/A'}</div>
+                <div class="info-item"><span>Código da Bateria:</span> ${laudoData.codBateria || 'N/A'}</div>
+                <div class="info-item"><span>Acessórios:</span> ${laudoData.acessorios}</div>
+              </div>
+            </div>
+
+            <div class="section"><h2>DEFEITO RELATADO PELO CLIENTE</h2><p>${laudoData.defeitoRelatado}</p></div>
+            <div class="section"><h2>OBSERVAÇÕES TÉCNICAS</h2><p>${laudoData.obsTecnicas}</p></div>
+            <div class="section"><h2>FOTOS DO EQUIPAMENTO</h2><div class="fotos-grid">${laudoData.imagens.map(src => `<img src="${src}">`).join('')}</div></div>
+            <div class="section"><h2>OBSERVAÇÕES GERAIS</h2><p>${laudoData.obsGerais || 'Nenhuma.'}</p></div>
+            <div class="section">
+                <h2>PEÇAS PARA SUBSTITUIÇÃO</h2>
+                <table>
+                    <thead><tr><th>Código</th><th>Descrição</th><th>Quantidade</th></tr></thead>
+                    <tbody>
+                    ${laudoData.pecasSelecionadas.map(peca => `<tr style="background-color: ${coresMap[peca.cor].background}; color: ${coresMap[peca.cor].text};"><td>${peca.codigo}</td><td>${peca.nome}</td><td>${peca.quantidade}</td></tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <div class="section"><img src="${caminhoImagemLegenda}" alt="Legenda de Cores" style="width: 100%; max-width: 500px; display: block; margin: auto;"></div>
+            <p class="tempo-analise">Tempo de análise: ${laudoData.tempoAnalise} Horas</p>
+
+            <p class="classegarantia">Garantia: ${laudoData.garantia}</p>
+
+            <div class="assinaturas-section">
+                <div class="assinatura-box"><div class="assinatura-linha">Supervisor</div></div>
+                <div class="assinatura-box"><div class="assinatura-linha">Laboratório</div></div>
+            </div>
+            <div class="button-container no-print">
+              <button class="button save-btn" onclick="salvarNaPlanilha()">Salvar na Planilha</button>
+              <button class="button print-btn" onclick="window.print()">Imprimir Laudo</button>
+            </div>
+          </div>
+
+          <script>
+            const laudoDataParaEnvio = ${JSON.stringify(laudoData)};
+            // As constantes do seu Apps Script precisam ser passadas para este script
+            const GOOGLE_WEBAPP_URL = '${GOOGLE_WEBAPP_URL}';
+            const UPLOAD_TOKEN = '${UPLOAD_TOKEN}';
+            
+            // A sua função de envio agora vive aqui dentro
+            function salvarNaPlanilha() {
+              const payload = {
+                token: UPLOAD_TOKEN,
+                ra: laudoDataParaEnvio.ra,
+                cliente: laudoDataParaEnvio.cliente,
+                equipamento: laudoDataParaEnvio.equipamento,
+                dataEntrada: laudoDataParaEnvio.dataEntrada,
+                horaEntrada: laudoDataParaEnvio.horaEntrada,
+                acessorios: laudoDataParaEnvio.acessorios,
+                codRobo: laudoDataParaEnvio.codRobo,
+                codFonte: laudoDataParaEnvio.codFonte,
+                codMotor: laudoDataParaEnvio.codMotor,
+                codBateria: laudoDataParaEnvio.codBateria,
+                tempoAnalise: laudoDataParaEnvio.tempoAnalise,
+                garantia: laudoDataParaEnvio.garantia,
+                defeitoRelatado: laudoDataParaEnvio.defeitoRelatado.replace(/<br>/g, "\\n"),
+                obsTecnicas: laudoDataParaEnvio.obsTecnicas.replace(/<br>/g, "\\n"),
+                obsGerais: laudoDataParaEnvio.obsGerais.replace(/<br>/g, "\\n"),
+                pecasSelecionadas: laudoDataParaEnvio.pecasSelecionadas
+              };
+
+              const btnSalvar = document.querySelector('.save-btn');
+              btnSalvar.disabled = true;
+              btnSalvar.textContent = 'Enviando...';
+
+              fetch(GOOGLE_WEBAPP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(payload)
+              })
+              .then(r => r.text())
+              .then(txt => {
+                try {
+                  const res = JSON.parse(txt);
+                  if (res.ok) {
+                    alert('Dados salvos na planilha com sucesso!');
+                    btnSalvar.textContent = 'Salvo com Sucesso!';
+                  } else {
+                    alert('Falha ao salvar na planilha: ' + (res.error || 'Erro desconhecido'));
+                    btnSalvar.disabled = false;
+                    btnSalvar.textContent = 'Salvar na Planilha';
+                  }
+                } catch {
+                  alert('Upload concluído (sem resposta JSON). Verifique a planilha.');
+                  btnSalvar.textContent = 'Salvo!';
+                }
+              })
+              .catch(err => {
+                console.error(err);
+                alert('Erro de conexão ao salvar na planilha: ' + err);
+                btnSalvar.disabled = false;
+                btnSalvar.textContent = 'Salvar na Planilha';
+              });
+            }
+          <\/script>
+        </body>
+        </html>
+    `);
+    novaJanela.document.close();
+}
+
+</script>
+</body>
+</html>
+
+
+Made by Laboratório
