@@ -414,6 +414,7 @@
         </div>
       </div>
 
+      <!-- SÉRIES DINÂMICAS RENDERIZADAS AQUI -->
       <div id="containerDinamicoSeries"></div>
 
       <div class="form-group">
@@ -425,6 +426,7 @@
       </select>
       </div>
 
+      <!-- ACESSÓRIOS DINÂMICOS RENDERIZADOS AQUI -->
       <div class="form-group hidden" id="grupoAcessorios">
         <span>Acessórios Inclusos:</span>
         <div class="checkbox-group" id="containerDinamicoAcessorios"></div>
@@ -438,6 +440,7 @@
             <textarea id="defeitoRelatado" rows="4" required></textarea>
         </div>
         
+        <!-- CAMPOS TÉCNICOS EXTRAS DINÂMICOS RENDERIZADOS AQUI -->
         <div id="containerCamposExtra"></div>
 
         <div class="form-group">
@@ -477,11 +480,42 @@
 
 <script>
 // ============================================================
-// DICIONÁRIO DE ARQUITETURA DE EQUIPAMENTOS (Mapeamento Dinâmico Avançado)
+// DICIONÁRIO DE ARQUITETURA DE EQUIPAMENTOS E SERVIÇOS 
 // ============================================================
+const tabelaServicos = {
+    robo: [
+        { nivel: "Simples",  codigo: "27792", desc: "SERVIÇO CONSERTO ROBÔ", detalhe: "Manutenção corretiva e preventiva básica." },
+        { nivel: "Moderado", codigo: "27793", desc: "SERVIÇO CONSERTO ROBÔ", detalhe: "Manutenção corretiva intermediária." },
+        { nivel: "Complexo", codigo: "27794", desc: "SERVIÇO CONSERTO ROBÔ", detalhe: "Manutenção corretiva avançada (Estrutural/Eletrônica)." }
+    ],
+    sauna: [
+        { nivel: "Simples",  codigo: "27768", desc: "SERVIÇO CONSERTO SAUNA", detalhe: "Manutenção corretiva e preventiva básica." },
+        { nivel: "Moderado", codigo: "27769", desc: "SERVIÇO CONSERTO SAUNA", detalhe: "Manutenção corretiva intermediária." },
+        { nivel: "Complexo", codigo: "27777", desc: "SERVIÇO CONSERTO SAUNA", detalhe: "Manutenção corretiva avançada." }
+    ],
+    trocador: [
+        { nivel: "Simples",  codigo: "27778", desc: "SERVIÇO CONSERTO TROCADOR", detalhe: "Manutenção corretiva e preventiva básica." },
+        { nivel: "Moderado", codigo: "27779", desc: "SERVIÇO CONSERTO TROCADOR", detalhe: "Manutenção corretiva intermediária." },
+        { nivel: "Complexo", codigo: "27780", desc: "SERVIÇO CONSERTO TROCADOR", detalhe: "Manutenção corretiva avançada." },
+        { nivel: "Complexo 2", codigo: "27781", desc: "SERVIÇO CONSERTO TROCADOR", detalhe: "Manutenção corretiva altamente complexa." }
+    ],
+    quadro: [
+        { nivel: "Simples",  codigo: "27782", desc: "SERVIÇO CONSERTO QUADRO DE COMANDO", detalhe: "Manutenção de quadro de comando." }
+    ],
+    gerador: [
+        { nivel: "Simples",  codigo: "27783", desc: "SERVIÇO CONSERTO GERADOR DE CLORO", detalhe: "Manutenção em gerador de cloro." },
+        { nivel: "Moderado", codigo: "27784", desc: "SERVIÇO CONSERTO GERADOR DE CLORO", detalhe: "Manutenção em gerador de cloro." },
+        { nivel: "Complexo", codigo: "27785", desc: "SERVIÇO CONSERTO GERADOR DE CLORO", detalhe: "Manutenção em gerador de cloro." }
+    ],
+    diversos: [
+        { nivel: "Simples",  codigo: "27795", desc: "SERVIÇO CONSERTO PRODUTOS DIVERSOS", detalhe: "Manutenção em produtos diversos." }
+    ]
+};
+
 const estruturaEquipamentos = [
     {
         palavrasChave: ['WAVE', 'RB', 'ROBO', 'ASPIRADOR'],
+        tipoServico: 'robo',
         series: [
             { id: 'codRobo', label: 'Código / Série do Robô' },
             { id: 'codFonte', label: 'Código / Série da Fonte' },
@@ -492,12 +526,12 @@ const estruturaEquipamentos = [
     },
     {
         palavrasChave: ['TROCADOR', 'BOMBA DE CALOR', 'SD'],
+        tipoServico: 'trocador',
         series: [
             { id: 'codTrocador', label: 'Número de Série do Trocador' },
             { id: 'codCompressor', label: 'Número de Série do Compressor' }
         ],
         acessorios: ['Manual', 'Kit Instalação', 'Sensor de Temperatura', 'Capa Protetora', 'Painel de Comando Externo'],
-        // Novos Campos Técnicos Obrigatórios Apenas para Trocadores de Calor
         camposTecnicosExtra: [
             { id: 'codDefeito', label: 'Código de Defeito', type: 'text' },
             { id: 'codCausa', label: 'Código de Causa', type: 'text' },
@@ -518,18 +552,46 @@ const estruturaEquipamentos = [
         ]
     },
     {
+        palavrasChave: ['SAUNA', 'VAPOR', 'SOCALOR'],
+        tipoServico: 'sauna',
+        series: [
+            { id: 'codSauna', label: 'Código / Série da Sauna' },
+            { id: 'codResistencia', label: 'Código da Resistência' }
+        ],
+        acessorios: ['Manual', 'Painel de Comando', 'Sensor de Temperatura']
+    },
+    {
+        palavrasChave: ['QUADRO', 'COMANDO'],
+        tipoServico: 'quadro',
+        series: [{ id: 'codQuadro', label: 'Número de Série do Quadro' }],
+        acessorios: ['Manual', 'Chave']
+    },
+    {
+        palavrasChave: ['GERADOR', 'GER ', 'CLORO', 'SAL'],
+        tipoServico: 'gerador',
+        series: [
+            { id: 'codGerador', label: 'Código do Gerador' },
+            { id: 'codCelula', label: 'Código da Célula' },
+            { id: 'codFonteGerador', label: 'Código da Fonte' }
+        ],
+        acessorios: ['Caixa', 'Célula', 'Fonte', 'Cabo', 'Gerador', 'Fluxostato', 'Manual']
+    },
+    {
         palavrasChave: ['LED', 'REFLETOR', 'LUMINARIA', 'SMD'],
+        tipoServico: 'diversos',
         series: [{ id: 'codLed', label: 'Lote / Série do Refletor' }],
         acessorios: ['Caixa', 'Manual', 'Fonte 12V', 'Controle Remoto', 'Módulo de Comando', 'Cabo Extensor']
     },
     {
         palavrasChave: ['BOMBA', 'FILTRO', 'MOTOR'],
+        tipoServico: 'diversos',
         series: [{ id: 'codBomba', label: 'Número de Série da Bomba/Filtro' }],
         acessorios: ['Manual', 'Pré-Filtro', 'Uniões', 'Tampa Acrílica']
     }
 ];
 
 const estruturaPadrao = {
+    tipoServico: 'diversos',
     series: [{ id: 'codGenerico', label: 'Número de Série do Equipamento' }],
     acessorios: ['Caixa', 'Manual', 'Cabos Padrão']
 };
@@ -563,7 +625,7 @@ function renderizarCamposDinamicos(nomeEquipamento) {
         grupoAcessorios.classList.add('hidden');
     }
 
-    // Renderiza Campos Técnicos Extras (Trocadores)
+    // Renderiza Campos Técnicos Extras
     const containerExtra = document.getElementById('containerCamposExtra');
     containerExtra.innerHTML = '';
     if (config.camposTecnicosExtra) {
@@ -586,24 +648,24 @@ function renderizarCamposDinamicos(nomeEquipamento) {
         });
         containerExtra.innerHTML = htmlExtra;
     }
+
+    // Renderiza as opções de serviço baseadas no tipo mapeado
+    const selectServico = document.getElementById("selecaoServico");
+    selectServico.innerHTML = '<option value="">-- Selecione o serviço --</option>';
+    if (tabelaServicos[config.tipoServico]) {
+        selectServico.disabled = false;
+        tabelaServicos[config.tipoServico].forEach(servico => {
+            const option = document.createElement("option");
+            option.value = JSON.stringify(servico);
+            option.text = `${servico.nivel} - ${servico.desc}`;
+            selectServico.appendChild(option);
+        });
+    } else {
+        selectServico.disabled = true;
+    }
 }
 
-
-// --- CONFIGURAÇÃO DOS SERVIÇOS (Mão de Obra Fixa) ---
-const tabelaServicos = {
-    residencial: [
-        { nivel: "Simples",  codigo: "27792", desc: "SERVIÇO CONSERTO RES NL1", detalhe: "Manutenção corretiva e preventiva básica." },
-        { nivel: "Moderado", codigo: "27793", desc: "SERVIÇO CONSERTO RES NL2", detalhe: "Manutenção corretiva intermediária." },
-        { nivel: "Complexo", codigo: "27794", desc: "SERVIÇO CONSERTO RES NL3", detalhe: "Manutenção corretiva avançada (Estrutural/Eletrônica)." }
-    ],
-    comercial: [
-        { nivel: "Simples",  codigo: "27789", desc: "SERVIÇO CONSERTO COML NL1", detalhe: "Manutenção corretiva e preventiva básica." },
-        { nivel: "Moderado", codigo: "27790", desc: "SERVIÇO CONSERTO COML NL2", detalhe: "Manutenção corretiva intermediária." },
-        { nivel: "Complexo", codigo: "27791", desc: "SERVIÇO CONSERTO COML NL3", detalhe: "Manutenção corretiva avançada (Estrutural/Eletrônica)." }
-    ]
-};
-
-const GOOGLE_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycby71jdg4zcudOYmfj_yI1_a-K_KCtuw-1EoX14ki61y8Co681HHSFWOdXtsQPcNpP-xvg/exec';
+const GOOGLE_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyWLWRFdlvnVzqkTyv50c5EBpvNstXESOrC4lu5r_P9cHWBCCHfQh4Q_MeBMNzW5mQe/exec';
 const LIMITE_ESTOQUE_BAIXO = 2;
 let estoquePorProduto = {}; let nomesPorProduto = {}; let codigosPorNomeProduto = {}; let estoqueCarregado = false;
 
@@ -654,7 +716,9 @@ let timeoutBusca = null;
 document.getElementById('codigoMaquina').addEventListener('input', function() {
     clearTimeout(timeoutBusca); const codigo = this.value.trim();
     if (!codigo) {
-        document.getElementById('nomeMaquina').value = ''; document.getElementById('pecasBox').classList.add('hidden'); document.getElementById("selecaoServico").disabled = true;
+        document.getElementById('nomeMaquina').value = ''; document.getElementById('pecasBox').classList.add('hidden'); 
+        document.getElementById("selecaoServico").innerHTML = '<option value="">-- O equipamento ainda não foi identificado --</option>';
+        document.getElementById("selecaoServico").disabled = true;
         document.getElementById("containerDinamicoSeries").innerHTML = ''; document.getElementById("grupoAcessorios").classList.add('hidden'); document.getElementById("containerCamposExtra").innerHTML = ''; return;
     }
     const nomeEncontrado = obterNomeProdutoPorCodigo(codigo);
@@ -663,13 +727,14 @@ document.getElementById('codigoMaquina').addEventListener('input', function() {
         timeoutBusca = setTimeout(() => { carregarPecasDinamicamente(codigo, nomeEncontrado); }, 500);
     } else {
         document.getElementById('nomeMaquina').value = 'Equipamento não localizado no DataShock'; document.getElementById('pecasBox').classList.add('hidden');
+        document.getElementById("selecaoServico").innerHTML = '<option value="">-- O equipamento ainda não foi identificado --</option>';
         document.getElementById("selecaoServico").disabled = true; document.getElementById("containerDinamicoSeries").innerHTML = ''; document.getElementById("grupoAcessorios").classList.add('hidden'); document.getElementById("containerCamposExtra").innerHTML = '';
     }
 });
 
 function carregarPecasDinamicamente(codigoEquipamento, nomeEquipamento) {
-  const pecasBox = document.getElementById("pecasBox"); const lista = document.getElementById("pecasLista"); const selectServico = document.getElementById("selecaoServico");
-  pecasBox.classList.remove("hidden"); lista.innerHTML = "<p style='color: var(--cor-primaria); font-weight:bold;'>Conectando ao banco de peças (Planilha 2)...</p>"; selectServico.innerHTML = '<option value="">-- Selecione o serviço --</option>'; selectServico.disabled = true;
+  const pecasBox = document.getElementById("pecasBox"); const lista = document.getElementById("pecasLista"); 
+  pecasBox.classList.remove("hidden"); lista.innerHTML = "<p style='color: var(--cor-primaria); font-weight:bold;'>Conectando ao banco de peças (Planilha 2)...</p>";
 
   fetch(`${GOOGLE_WEBAPP_URL}?action=getPecas&codigoEquip=${encodeURIComponent(codigoEquipamento)}`)
     .then(res => res.json())
@@ -680,10 +745,6 @@ function carregarPecasDinamicamente(codigoEquipamento, nomeEquipamento) {
             lista.innerHTML = `<h4>Componentes Disponíveis</h4>`;
             data.pecas.forEach(peca => { const componente = resolverComponentePeloBanco(peca); lista.innerHTML += criarHtmlPeca(componente.codigo, componente.nome, codigoEquipamento); });
             aplicarEstoqueNasPecas();
-            const tipo = nomeEquipamento.toUpperCase().includes('WAVE') || nomeEquipamento.toUpperCase().includes('COML') ? 'comercial' : 'residencial';
-            if (tabelaServicos[tipo]) {
-                selectServico.disabled = false; tabelaServicos[tipo].forEach(servico => { const option = document.createElement("option"); option.value = JSON.stringify(servico); option.text = `${servico.nivel} - ${servico.desc}`; selectServico.appendChild(option); });
-            }
         } else { lista.innerHTML = `<p>Aba vazia.</p>`; }
     }).catch(err => { console.error(err); lista.innerHTML = "<p style='color:red;'>Erro ao puxar componentes da planilha.</p>"; });
 }
@@ -759,9 +820,29 @@ function gerarLaudo() {
     const basePath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
     const caminhoImagemLegenda = basePath + 'imagens/tabelacores.jpg'; const caminhoLogo = basePath + 'imagens/logolaudo.jpg';
 
-    const htmlSeries = laudoData.series.map(s => `<div class="info-item"><span>${s.label}:</span> ${s.valor}</div>`).join('');
+    // Construção Mapeada das Informações (Usando tabelas para manter o jsPDF sem quebras)
+    const allInfos = [
+      { label: 'Código Equipamento', valor: laudoData.codigoMaquina },
+      { label: 'Nome Equipamento', valor: laudoData.nomeMaquina },
+      { label: 'Data/Hora Entrada', valor: laudoData.dataEntrada + ' às ' + laudoData.horaEntrada },
+      { label: 'Cliente', valor: laudoData.cliente },
+      ...laudoData.series
+    ];
+
+    let htmlSeriesRows = '';
+    for (let i = 0; i < allInfos.length; i += 2) {
+      htmlSeriesRows += '<tr>';
+      htmlSeriesRows += `<td class="info-item-td"><span>${allInfos[i].label}:</span> ${allInfos[i].valor}</td>`;
+      if (allInfos[i+1]) {
+        htmlSeriesRows += `<td class="info-item-td"><span>${allInfos[i+1].label}:</span> ${allInfos[i+1].valor}</td>`;
+      } else {
+        htmlSeriesRows += `<td class="info-item-td"></td>`;
+      }
+      htmlSeriesRows += '</tr>';
+    }
+    htmlSeriesRows += `<tr><td colspan="2" class="info-item-td"><span>Acessórios Inclusos:</span> ${laudoData.acessorios}</td></tr>`;
     
-    // Gerar HTML condicional para os campos extras (Trocadores)
+    // Gerar HTML condicional para os campos extras
     let htmlExtrasPDF = '';
     if (laudoData.camposExtras.length > 0) {
         const testes = laudoData.camposExtras.filter(e => e.label.startsWith('[Teste]'));
@@ -788,33 +869,59 @@ function gerarLaudo() {
         <html>
         <head>
           <title>Laudo Técnico - RA/ID ${laudoData.ra}</title>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
           <style>
-            body { font-family: Arial, sans-serif; margin: 0; background-color: #fff; color: #333; }
-            .container { max-width: 800px; margin: 20px auto; }
+            /* Reset rigoroso e blindagem contra cores do modo noturno */
+            * { 
+              -webkit-print-color-adjust: exact !important; 
+              print-color-adjust: exact !important; 
+              color-adjust: exact !important; 
+            }
+            body { font-family: Arial, sans-serif; margin: 0; background-color: #ffffff !important; color: #000000 !important; }
+            .container { width: 800px; margin: 20px auto; background: #ffffff !important; padding: 10px; box-sizing: border-box; }
+            
             table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 14px; }
-            th { background-color: #e9ecef; font-weight: bold; }
+            th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 14px; color: #000000 !important; }
+            th { background-color: #e9ecef !important; font-weight: bold; color: #000000 !important; }
+            
             .section { margin-bottom: 30px; }
-            .section h2 { font-size: 14px; font-weight: bold; color: #fff; background-color: #002060; padding: 8px; margin: 0 0 15px 0; border-radius: 4px; }
-            .fotos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
-            .fotos-grid img { width: 100%; height: 5cm; object-fit: contain; border-radius: 4px; border: 1px solid #ccc; background-color: #f9f9f9; }
-            .header-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; border: 2px solid #000; }
-            .header-table td { border: 1px solid #000; padding: 5px; vertical-align: middle; }
+            .section h2 { font-size: 14px; font-weight: bold; color: #ffffff !important; background-color: #002060 !important; padding: 8px; margin: 0 0 15px 0; border-radius: 4px; }
+            
+            .fotos-grid { display: block; margin-top: 10px; font-size: 0; text-align: left; }
+            .fotos-grid img { display: inline-block; width: 31%; height: 160px; object-fit: contain; margin: 5px; border: 1px solid #ccc; background-color: #f9f9f9 !important; box-sizing: border-box; vertical-align: top; }
+            
+            .header-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; border: 2px solid #000; }
+            .header-table td { border: 1px solid #000; padding: 5px; vertical-align: middle; color: #000000 !important; }
             .logo-cell { width: 200px; text-align: center; padding: 10px; } .logo-cell img { max-width: 180px; height: auto; }
-            .info-table { width: 100%; } .info-table td { border: 1px solid #000; padding: 8px; font-size: 14px; }
-            .company-name { background-color: #002060; color: white; font-weight: bold; text-align: center; font-size: 18px; padding: 8px; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; border: 1px solid #eee; border-radius: 4px; }
-            .info-item { padding-bottom: 8px; border-bottom: 1px dotted #ccc; font-size: 14px; } .info-item span { font-weight: bold; }
-            p { font-size: 14px; line-height: 1.6; margin-top: 0;}
-            .assinaturas-section { display: flex; justify-content: space-around; margin-top: 80px; text-align: center; }
-            .assinatura-box { width: 300px; } .assinatura-linha { border-top: 1px solid #000; margin-top: 5px; padding-top: 5px; }
-            .service-table { width: 100%; margin-top: 20px; border: 2px solid #002060; } .service-table th { background-color: #002060; color: white; text-align: center; } .service-table td { text-align: center; padding: 10px; }
-            .estoque-pdf-baixo { background-color: #fff3cd; color: #664d03; font-weight: bold; } .estoque-pdf-zerado { background-color: #f8d7da; color: #842029; font-weight: bold; }
-            .classegarantia { text-align: right; font-weight: bold; color: black; font-size: 16px; margin-top: 20px; }
+            
+            .info-table { width: 100%; border: none; } 
+            .info-table td { border: 1px solid #000; padding: 8px; font-size: 14px; color: #000000 !important; }
+            .company-name { background-color: #002060 !important; color: #ffffff !important; font-weight: bold; text-align: center; font-size: 18px; padding: 8px; }
+            
+            .info-table-data { width: 100%; border-collapse: collapse; border: 1px solid #eee; margin-bottom: 15px; }
+            .info-item-td { padding: 10px; border-bottom: 1px dotted #ccc; font-size: 14px; width: 50%; vertical-align: top; border-left: none; border-right: none; border-top: none; color: #000000 !important; }
+            .info-item-td span { font-weight: bold; color: #000000 !important; }
+            
+            p { font-size: 14px; line-height: 1.6; margin-top: 0; color: #000000 !important; }
+            
+            .assinaturas-section { width: 100%; margin-top: 80px; text-align: center; border: none; }
+            .assinaturas-section td { width: 50%; vertical-align: top; border: none; padding: 0; }
+            .assinatura-linha { width: 250px; margin: 0 auto; border-top: 1px solid #000; padding-top: 5px; font-size: 14px; color: #000000 !important; }
+            
+            .service-table { width: 100%; margin-top: 20px; border: 2px solid #002060; } 
+            .service-table th { background-color: #002060 !important; color: #ffffff !important; text-align: center; border: 1px solid #002060; } 
+            .service-table td { text-align: center; padding: 10px; border: 1px solid #002060; color: #000000 !important; }
+            
+            .estoque-pdf-baixo { background-color: #fff3cd !important; color: #664d03 !important; font-weight: bold; } 
+            .estoque-pdf-zerado { background-color: #f8d7da !important; color: #842029 !important; font-weight: bold; }
+            .classegarantia { text-align: right; font-weight: bold; color: #000000 !important; font-size: 16px; margin-top: 20px; }
+            
             .button-container { text-align: center; margin-top: 30px; }
-            .button { padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; color: white; margin: 0 10px; }
-            .print-btn { background-color: #007bff; } .save-btn { background-color: #28a745; }
-            @media print { .no-print { display: none; } body { margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; } .section h2, .service-table th { background-color: #002060 !important; color: #fff !important; } }
+            .button { padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; color: white !important; margin: 0 10px; }
+            .print-btn { background-color: #007bff !important; } .save-btn { background-color: #28a745 !important; }
+            
+            @media print { .no-print { display: none !important; } body { margin: 0; } }
           </style>
         </head>
         <body>
@@ -834,14 +941,9 @@ function gerarLaudo() {
 
             <div class="section">
               <h2>DADOS DO PRODUTO</h2>
-              <div class="info-grid">
-                <div class="info-item"><span>Código Equipamento:</span> ${laudoData.codigoMaquina}</div>
-                <div class="info-item"><span>Nome Equipamento:</span> ${laudoData.nomeMaquina}</div>
-                <div class="info-item"><span>Data/Hora Entrada:</span> ${laudoData.dataEntrada} às ${laudoData.horaEntrada}</div>
-                <div class="info-item"><span>Cliente:</span> ${laudoData.cliente}</div>
-                ${htmlSeries}
-                <div class="info-item" style="grid-column: 1 / -1;"><span>Acessórios Inclusos:</span> ${laudoData.acessorios}</div>
-              </div>
+              <table class="info-table-data">
+                ${htmlSeriesRows}
+              </table>
             </div>
 
             <div class="section"><h2>DEFEITO RELATADO PELO CLIENTE</h2><p>${laudoData.defeitoRelatado}</p></div>
@@ -849,7 +951,12 @@ function gerarLaudo() {
             ${htmlExtrasPDF}
 
             <div class="section"><h2>OBSERVAÇÕES TÉCNICAS / DIAGNÓSTICO</h2><p>${laudoData.obsTecnicas}</p></div>
-            <div class="section"><h2>FOTOS DO EQUIPAMENTO</h2><div class="fotos-grid">${laudoData.imagens.map(src => `<img src="${src}">`).join('')}</div></div>
+            
+            <div class="section">
+              <h2>FOTOS DO EQUIPAMENTO</h2>
+              <div class="fotos-grid">${laudoData.imagens.map(src => `<img src="${src}">`).join('')}</div>
+            </div>
+            
             <div class="section"><h2>OBSERVAÇÕES GERAIS</h2><p>${laudoData.obsGerais || 'Nenhuma.'}</p></div>
             
             <div class="section">
@@ -859,7 +966,7 @@ function gerarLaudo() {
                     <tbody>
                     ${laudoData.pecasSelecionadas.map(peca => {
                         const estoqueClassePdf = peca.estoque === null ? '' : (peca.estoque <= 0 ? 'estoque-pdf-zerado' : (peca.estoque <= LIMITE_ESTOQUE_BAIXO ? 'estoque-pdf-baixo' : ''));
-                        return `<tr style="background-color: ${coresMap[peca.cor].background}; color: ${coresMap[peca.cor].text};"><td>${peca.codigo}</td><td>${peca.nome}</td><td>${peca.quantidade}</td><td class="${estoqueClassePdf}">${textoEstoque(peca.estoque).replace('Estoque: ', '')}</td></tr>`;
+                        return `<tr style="background-color: ${coresMap[peca.cor].background}; color: ${coresMap[peca.cor].text} !important;"><td style="border:1px solid #000">${peca.codigo}</td><td style="border:1px solid #000">${peca.nome}</td><td style="border:1px solid #000">${peca.quantidade}</td><td class="${estoqueClassePdf}" style="border:1px solid #000">${textoEstoque(peca.estoque).replace('Estoque: ', '')}</td></tr>`;
                     }).join('')}
                     </tbody>
                 </table>
@@ -877,24 +984,33 @@ function gerarLaudo() {
 
             <p class="classegarantia">Garantia: ${laudoData.garantia}</p>
 
-            <div class="assinaturas-section">
-                <div class="assinatura-box"><div class="assinatura-linha">Supervisor</div></div>
-                <div class="assinatura-box"><div class="assinatura-linha">Laboratório</div></div>
-            </div>
+            <table class="assinaturas-section">
+                <tr>
+                    <td><div class="assinatura-linha">Supervisor</div></td>
+                    <td><div class="assinatura-linha">Laboratório</div></td>
+                </tr>
+            </table>
+
             <div class="button-container no-print">
-              <button class="button save-btn" onclick="salvarNaPlanilha()">Salvar na Planilha</button>
+              <button class="button save-btn" onclick="salvarETrello()">Salvar Dados</button>
               <button class="button print-btn" onclick="window.print()">Imprimir Laudo</button>
             </div>
           </div>
 
           <script>
             const laudoDataParaEnvio = ${JSON.stringify(laudoData)};
-            const GOOGLE_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwWnFUrA-3sXGxYOER59G-OlYymHFY8RN-WqOIikCnek-Bdd1Ayk193Unopy3ICSMP1/exec';
-            
+            const GOOGLE_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzCfu6XW3hI3uuKaQj5DCCDKxDlsW1IdRketmDlWtcv8sE8KF1wk28VAmHwm1IsMbxY/exec';
+
+            // --- CONFIGURAÇÃO DO TRELLO ---
+            const TRELLO_CONFIG = {
+              KEY: '0415bbec29847408d11cffc4ce584011',
+              TOKEN: 'ATTA72a30419757aee2bf9de7c331cff1ebd4227b6fec96a34d82c0cc2a5c4a4d8c627783D83',
+              BOARD_ID: '6a47f1be7f248da154beeebb'
+            };
+
             function salvarNaPlanilha() {
               const stringSéries = laudoDataParaEnvio.series.map(s => s.label + ': ' + s.valor).join(' | ');
-              
-              // Opcional: Se quiser mandar os campos extras textuais para a planilha também, pode embutir no obsTecnicas
+
               let anexosTecnicosStr = '';
               if (laudoDataParaEnvio.camposExtras && laudoDataParaEnvio.camposExtras.length > 0) {
                   anexosTecnicosStr = '\\n\\n--- PARÂMETROS AVANÇADOS ---\\n' + laudoDataParaEnvio.camposExtras.map(e => e.label + ': ' + e.valor.replace(/\\n/g, ', ')).join('\\n');
@@ -903,8 +1019,8 @@ function gerarLaudo() {
               const payload = {
                 ra: laudoDataParaEnvio.ra, cliente: laudoDataParaEnvio.cliente, equipamento: laudoDataParaEnvio.equipamento,
                 dataEntrada: laudoDataParaEnvio.dataEntrada, horaEntrada: laudoDataParaEnvio.horaEntrada, acessorios: laudoDataParaEnvio.acessorios,
-                registroDeSeries: stringSéries, 
-                tempoAnalise: laudoDataParaEnvio.servico.codigo + " - " + laudoDataParaEnvio.servico.nivel, 
+                registroDeSeries: stringSéries,
+                tempoAnalise: laudoDataParaEnvio.servico.codigo + " - " + laudoDataParaEnvio.servico.nivel,
                 garantia: laudoDataParaEnvio.garantia,
                 defeitoRelatado: laudoDataParaEnvio.defeitoRelatado.replace(/<br>/g, "\\n"),
                 obsTecnicas: laudoDataParaEnvio.obsTecnicas.replace(/<br>/g, "\\n") + anexosTecnicosStr,
@@ -912,17 +1028,141 @@ function gerarLaudo() {
                 pecasSelecionadas: laudoDataParaEnvio.pecasSelecionadas
               };
 
-              const btnSalvar = document.querySelector('.save-btn');
-              btnSalvar.disabled = true; btnSalvar.textContent = 'Enviando...';
-
-              fetch(GOOGLE_WEBAPP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
-              .then(r => r.text()).then(txt => {
+              return fetch(GOOGLE_WEBAPP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
+              .then(r => r.text())
+              .then(txt => {
                 try {
                   const res = JSON.parse(txt);
-                  if (res.ok) { alert('Dados salvos!'); btnSalvar.textContent = 'Salvo com Sucesso!'; } 
-                  else { alert('Falha: ' + res.error); btnSalvar.disabled = false; btnSalvar.textContent = 'Salvar na Planilha'; }
-                } catch { alert('Upload concluído.'); btnSalvar.textContent = 'Salvo!'; }
-              }).catch(err => { alert('Erro: ' + err); btnSalvar.disabled = false; btnSalvar.textContent = 'Salvar na Planilha'; });
+                  if (!res.ok) {
+                    throw new Error(res.error || 'Erro desconhecido ao salvar na planilha');
+                  }
+                } catch (e) {}
+              });
+            }
+
+            function gerarNomeArquivoPdf() {
+              const limpar = (txt) => (txt || '').toString().trim().replace(/[^a-zA-Z0-9-_]+/g, '_');
+              return 'Laudo_' + limpar(laudoDataParaEnvio.ra) + '_' + limpar(laudoDataParaEnvio.cliente) + '.pdf';
+            }
+
+            function esperarImagensCarregarem(elemento) {
+              const imgs = Array.from(elemento.querySelectorAll('img'));
+              return Promise.all(imgs.map(img => {
+                if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+                return new Promise(resolve => {
+                  img.addEventListener('load', resolve);
+                  img.addEventListener('error', resolve);
+                  setTimeout(resolve, 5000); 
+                });
+              }));
+            }
+
+            async function gerarPdfBlob() {
+              const elemento = document.querySelector('.container');
+              await esperarImagensCarregarem(elemento);
+              
+              const botoes = document.querySelector('.button-container');
+              if (botoes) botoes.style.display = 'none';
+
+              const { jsPDF } = window.jspdf;
+              // Ajustes rígidos no jsPDF html() para bater com as dimensões do container exato
+              const doc = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'portrait' });
+              
+              return new Promise((resolve, reject) => {
+                doc.html(elemento, {
+                  callback: function (pdf) {
+                    if (botoes) botoes.style.display = 'block';
+                    resolve(pdf.output('blob'));
+                  },
+                  margin: [30, 30, 30, 30],
+                  autoPaging: 'text',
+                  width: 535, // Largura útil A4
+                  windowWidth: 800 // Largura engessada correspondente ao CSS
+                }).catch(err => {
+                    if (botoes) botoes.style.display = 'block';
+                    reject(err);
+                });
+              });
+            }
+
+            function extrairNumeroAgendamento(nomeCard) {
+              const texto = (nomeCard || '').toString().trim();
+              return texto.replace(/^agendamento\\s*:?\\s*/i, '').trim().toLowerCase();
+            }
+
+            async function buscarCardPorRA(ra) {
+              const url = 'https://api.trello.com/1/boards/' + TRELLO_CONFIG.BOARD_ID +
+                '/cards?fields=name,idList&key=' + TRELLO_CONFIG.KEY + '&token=' + TRELLO_CONFIG.TOKEN;
+              const resp = await fetch(url);
+              if (!resp.ok) {
+                throw new Error('Falha ao consultar cards do Trello');
+              }
+              const cards = await resp.json();
+              const raNormalizado = (ra || '').toString().trim().toLowerCase();
+              return cards.find(c => extrairNumeroAgendamento(c.name) === raNormalizado) || null;
+            }
+
+            async function anexarPdfNoCard(cardId, pdfBlob) {
+              const url = 'https://api.trello.com/1/cards/' + cardId +
+                '/attachments?key=' + TRELLO_CONFIG.KEY + '&token=' + TRELLO_CONFIG.TOKEN;
+              const nomeArquivo = gerarNomeArquivoPdf();
+              const formData = new FormData();
+              formData.append('file', pdfBlob, nomeArquivo);
+              formData.append('name', nomeArquivo);
+              const resp = await fetch(url, { method: 'POST', body: formData });
+              if (!resp.ok) {
+                throw new Error('Falha ao anexar PDF no Trello');
+              }
+              return resp.json();
+            }
+
+            async function salvarETrello() {
+              const btnSalvar = document.querySelector('.save-btn');
+              btnSalvar.disabled = true;
+
+              btnSalvar.textContent = 'Salvando na planilha...';
+              try {
+                await salvarNaPlanilha();
+              } catch (err) {
+                console.error(err);
+                alert('Falha ao salvar na planilha: ' + err.message);
+                btnSalvar.disabled = false;
+                btnSalvar.textContent = 'Salvar Dados';
+                return;
+              }
+
+              btnSalvar.textContent = 'Gerando PDF...';
+              let pdfBlob;
+              try {
+                pdfBlob = await gerarPdfBlob();
+              } catch (err) {
+                console.error(err);
+                alert('Dados salvos na planilha, mas houve falha ao gerar o PDF: ' + err.message);
+                btnSalvar.disabled = false;
+                btnSalvar.textContent = 'Salvar Dados';
+                return;
+              }
+
+              btnSalvar.textContent = 'Buscando card no Trello...';
+              try {
+                const card = await buscarCardPorRA(laudoDataParaEnvio.ra);
+                if (!card) {
+                  alert('Dados salvos e PDF gerado, mas nenhum card do Trello foi encontrado com o nome "' +
+                    laudoDataParaEnvio.ra + '". Anexe o PDF manualmente.');
+                  btnSalvar.textContent = 'Salvo (sem Trello)';
+                } else {
+                  btnSalvar.textContent = 'Anexando no Trello...';
+                  await anexarPdfNoCard(card.id, pdfBlob);
+                  alert('Dados salvos, PDF gerado e anexado com sucesso no card do Trello!');
+                  btnSalvar.textContent = 'Salvo com Sucesso!';
+                }
+              } catch (err) {
+                console.error(err);
+                alert('Dados salvos e PDF gerado, mas houve falha ao anexar no Trello: ' + err.message);
+                btnSalvar.textContent = 'Salvo (falha no Trello)';
+              }
+
+              btnSalvar.disabled = false;
             }
           <\/script>
         </body>
