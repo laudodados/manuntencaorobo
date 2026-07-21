@@ -769,9 +769,355 @@ function gerarLaudo() {
     const basePath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
     const caminhoImagemLegenda = basePath + 'imagens/tabelacores.jpg'; const caminhoLogo = basePath + 'imagens/logolaudo.jpg';
 
-    // Construção Mapeada das Informações (Mantendo a geração padrão do jsPDF que você já tinha)
-    // Omitindo a concatenação extra por brevidade no script, este arquivo manterá a sua lógica intacta do PDF
-    alert("Função de Laudo disparada com sucesso! (Lógica do PDF continua a mesma do seu código original).");
+    // Construção Mapeada das Informações (Usando tabelas para manter o jsPDF sem quebras)
+    const allInfos = [
+      { label: 'Código Equipamento', valor: laudoData.codigoMaquina },
+      { label: 'Nome Equipamento', valor: laudoData.nomeMaquina },
+      { label: 'Data/Hora Entrada', valor: laudoData.dataEntrada + ' às ' + laudoData.horaEntrada },
+      { label: 'Cliente', valor: laudoData.cliente },
+      ...laudoData.series
+    ];
+
+    let htmlSeriesRows = '';
+    for (let i = 0; i < allInfos.length; i += 2) {
+      htmlSeriesRows += '<tr>';
+      htmlSeriesRows += `<td class="info-item-td"><span>${allInfos[i].label}:</span> ${allInfos[i].valor}</td>`;
+      if (allInfos[i+1]) {
+        htmlSeriesRows += `<td class="info-item-td"><span>${allInfos[i+1].label}:</span> ${allInfos[i+1].valor}</td>`;
+      } else {
+        htmlSeriesRows += `<td class="info-item-td"></td>`;
+      }
+      htmlSeriesRows += '</tr>';
+    }
+    htmlSeriesRows += `<tr><td colspan="2" class="info-item-td"><span>Acessórios Inclusos:</span> ${laudoData.acessorios}</td></tr>`;
+    
+    // Gerar HTML condicional para os campos extras
+    let htmlExtrasPDF = '';
+    if (laudoData.camposExtras.length > 0) {
+        const testes = laudoData.camposExtras.filter(e => e.label.startsWith('[Teste]'));
+        const textExtras = laudoData.camposExtras.filter(e => !e.label.startsWith('[Teste]'));
+
+        htmlExtrasPDF += `<div class="section"><h2>ANÁLISE AVANÇADA</h2><div style="padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px;">`;
+        textExtras.forEach(e => {
+            htmlExtrasPDF += `<p style="margin-bottom: 8px;"><strong>${e.label}:</strong><br>${e.valor.replace(/\n/g, '<br>')}</p>`;
+        });
+
+        if (testes.length > 0) {
+            htmlExtrasPDF += `<h3 style="font-size: 13px; font-weight: bold; margin-top: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">Parâmetros Operacionais de Teste</h3>
+                              <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                                <tr>${testes.map(t => `<th style="border: 1px solid #ccc; background: #e9ecef; font-size: 11px; padding: 5px; text-align: center;">${t.label.replace('[Teste] ', '')}</th>`).join('')}</tr>
+                                <tr>${testes.map(t => `<td style="border: 1px solid #ccc; font-size: 11px; padding: 5px; text-align: center;">${t.valor}</td>`).join('')}</tr>
+                              </table>`;
+        }
+        htmlExtrasPDF += `</div></div>`;
+    }
+
+    const novaJanela = window.open('', '_blank');
+    novaJanela.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Laudo Técnico - RA/ID ${laudoData.ra}</title>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
+          <style>
+            /* Reset rigoroso e blindagem contra cores do modo noturno */
+            * { 
+              -webkit-print-color-adjust: exact !important; 
+              print-color-adjust: exact !important; 
+              color-adjust: exact !important; 
+            }
+            body { font-family: Arial, sans-serif; margin: 0; background-color: #ffffff !important; color: #000000 !important; }
+            .container { width: 800px; margin: 20px auto; background: #ffffff !important; padding: 10px; box-sizing: border-box; }
+            
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 14px; color: #000000 !important; }
+            th { background-color: #e9ecef !important; font-weight: bold; color: #000000 !important; }
+            
+            .section { margin-bottom: 30px; }
+            .section h2 { font-size: 14px; font-weight: bold; color: #ffffff !important; background-color: #002060 !important; padding: 8px; margin: 0 0 15px 0; border-radius: 4px; }
+            
+            .fotos-grid { display: block; margin-top: 10px; font-size: 0; text-align: left; }
+            .fotos-grid img { display: inline-block; width: 31%; height: 160px; object-fit: contain; margin: 5px; border: 1px solid #ccc; background-color: #f9f9f9 !important; box-sizing: border-box; vertical-align: top; }
+            
+            .header-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; border: 2px solid #000; }
+            .header-table td { border: 1px solid #000; padding: 5px; vertical-align: middle; color: #000000 !important; }
+            .logo-cell { width: 200px; text-align: center; padding: 10px; } .logo-cell img { max-width: 180px; height: auto; }
+            
+            .info-table { width: 100%; border: none; } 
+            .info-table td { border: 1px solid #000; padding: 8px; font-size: 14px; color: #000000 !important; }
+            .company-name { background-color: #002060 !important; color: #ffffff !important; font-weight: bold; text-align: center; font-size: 18px; padding: 8px; }
+            
+            .info-table-data { width: 100%; border-collapse: collapse; border: 1px solid #eee; margin-bottom: 15px; }
+            .info-item-td { padding: 10px; border-bottom: 1px dotted #ccc; font-size: 14px; width: 50%; vertical-align: top; border-left: none; border-right: none; border-top: none; color: #000000 !important; }
+            .info-item-td span { font-weight: bold; color: #000000 !important; }
+            
+            p { font-size: 14px; line-height: 1.6; margin-top: 0; color: #000000 !important; }
+            
+            .assinaturas-section { width: 100%; margin-top: 80px; text-align: center; border: none; }
+            .assinaturas-section td { width: 50%; vertical-align: top; border: none; padding: 0; }
+            .assinatura-linha { width: 250px; margin: 0 auto; border-top: 1px solid #000; padding-top: 5px; font-size: 14px; color: #000000 !important; }
+            
+            .service-table { width: 100%; margin-top: 20px; border: 2px solid #002060; } 
+            .service-table th { background-color: #002060 !important; color: #ffffff !important; text-align: center; border: 1px solid #002060; } 
+            .service-table td { text-align: center; padding: 10px; border: 1px solid #002060; color: #000000 !important; }
+            
+            .estoque-pdf-baixo { background-color: #fff3cd !important; color: #664d03 !important; font-weight: bold; } 
+            .estoque-pdf-zerado { background-color: #f8d7da !important; color: #842029 !important; font-weight: bold; }
+            .classegarantia { text-align: right; font-weight: bold; color: #000000 !important; font-size: 16px; margin-top: 20px; }
+            
+            .button-container { text-align: center; margin-top: 30px; }
+            .button { padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; color: white !important; margin: 0 10px; }
+            .print-btn { background-color: #007bff !important; } .save-btn { background-color: #28a745 !important; }
+            
+            @media print { .no-print { display: none !important; } body { margin: 0; } }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <table class="header-table">
+              <tr>
+                <td class="logo-cell"><img src="${caminhoLogo}" alt="Logo"></td>
+                <td>
+                  <table class="info-table">
+                    <tr><td class="company-name" colspan="2">NOME DA SUA EMPRESA AQUI</td></tr>
+                    <tr><td><strong>Laudo técnico</strong></td><td rowspan="2" style="text-align:center; vertical-align: middle;">${laudoData.dataGeracao}</td></tr>
+                    <tr><td><strong>RA/ID:</strong> ${laudoData.ra}</td></tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <div class="section">
+              <h2>DADOS DO PRODUTO</h2>
+              <table class="info-table-data">
+                ${htmlSeriesRows}
+              </table>
+            </div>
+
+            <div class="section"><h2>DEFEITO RELATADO PELO CLIENTE</h2><p>${laudoData.defeitoRelatado}</p></div>
+            
+            ${htmlExtrasPDF}
+
+            <div class="section"><h2>OBSERVAÇÕES TÉCNICAS / DIAGNÓSTICO</h2><p>${laudoData.obsTecnicas}</p></div>
+            
+            <div class="section">
+              <h2>FOTOS DO EQUIPAMENTO</h2>
+              <div class="fotos-grid">${laudoData.imagens.map(src => `<img src="${src}">`).join('')}</div>
+            </div>
+            
+            <div class="section"><h2>OBSERVAÇÕES GERAIS</h2><p>${laudoData.obsGerais || 'Nenhuma.'}</p></div>
+            
+            <div class="section">
+                <h2>PEÇAS PARA SUBSTITUIÇÃO</h2>
+                <table>
+                    <thead><tr><th>Código</th><th>Descrição</th><th>Quantidade</th><th>Estoque</th></tr></thead>
+                    <tbody>
+                    ${laudoData.pecasSelecionadas.map(peca => {
+                        const estoqueClassePdf = peca.estoque === null ? '' : (peca.estoque <= 0 ? 'estoque-pdf-zerado' : (peca.estoque <= LIMITE_ESTOQUE_BAIXO ? 'estoque-pdf-baixo' : ''));
+                        return `<tr style="background-color: ${coresMap[peca.cor].background}; color: ${coresMap[peca.cor].text} !important;"><td style="border:1px solid #000">${peca.codigo}</td><td style="border:1px solid #000">${peca.nome}</td><td style="border:1px solid #000">${peca.quantidade}</td><td class="${estoqueClassePdf}" style="border:1px solid #000">${textoEstoque(peca.estoque).replace('Estoque: ', '')}</td></tr>`;
+                    }).join('')}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="section"><img src="${caminhoImagemLegenda}" alt="Legenda" style="width: 100%; max-width: 500px; display: block; margin: auto;"></div>
+            
+            <div class="section">
+                <h2>CLASSIFICAÇÃO DO SERVIÇO</h2>
+                <table class="service-table">
+                    <tr><th style="width: 15%">Complexidade</th><th style="width: 15%">Código</th><th style="width: 30%">Descrição</th><th style="width: 40%">Detalhe do Serviço</th></tr>
+                    <tr><td><strong>${laudoData.servico.nivel}</strong></td><td>${laudoData.servico.codigo}</td><td>${laudoData.servico.desc}</td><td style="text-align: left">${laudoData.servico.detalhe}</td></tr>
+                </table>
+            </div>
+
+            <p class="classegarantia">Garantia: ${laudoData.garantia}</p>
+
+            <table class="assinaturas-section">
+                <tr>
+                    <td><div class="assinatura-linha">Supervisor</div></td>
+                    <td><div class="assinatura-linha">Laboratório</div></td>
+                </tr>
+            </table>
+
+            <div class="button-container no-print">
+              <button class="button save-btn" onclick="salvarETrello()">Salvar Dados</button>
+              <button class="button print-btn" onclick="window.print()">Imprimir Laudo</button>
+            </div>
+          </div>
+
+          <script>
+            const laudoDataParaEnvio = ${JSON.stringify(laudoData)};
+            const GOOGLE_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzCfu6XW3hI3uuKaQj5DCCDKxDlsW1IdRketmDlWtcv8sE8KF1wk28VAmHwm1IsMbxY/exec';
+
+            // --- CONFIGURAÇÃO DO TRELLO ---
+            const TRELLO_CONFIG = {
+              KEY: '0415bbec29847408d11cffc4ce584011',
+              TOKEN: 'ATTA72a30419757aee2bf9de7c331cff1ebd4227b6fec96a34d82c0cc2a5c4a4d8c627783D83',
+              BOARD_ID: '6a47f1be7f248da154beeebb'
+            };
+
+            function salvarNaPlanilha() {
+              const stringSéries = laudoDataParaEnvio.series.map(s => s.label + ': ' + s.valor).join(' | ');
+
+              let anexosTecnicosStr = '';
+              if (laudoDataParaEnvio.camposExtras && laudoDataParaEnvio.camposExtras.length > 0) {
+                  anexosTecnicosStr = '\\n\\n--- PARÂMETROS AVANÇADOS ---\\n' + laudoDataParaEnvio.camposExtras.map(e => e.label + ': ' + e.valor.replace(/\\n/g, ', ')).join('\\n');
+              }
+
+              const payload = {
+                ra: laudoDataParaEnvio.ra, cliente: laudoDataParaEnvio.cliente, equipamento: laudoDataParaEnvio.equipamento,
+                dataEntrada: laudoDataParaEnvio.dataEntrada, horaEntrada: laudoDataParaEnvio.horaEntrada, acessorios: laudoDataParaEnvio.acessorios,
+                registroDeSeries: stringSéries,
+                tempoAnalise: laudoDataParaEnvio.servico.codigo + " - " + laudoDataParaEnvio.servico.nivel,
+                garantia: laudoDataParaEnvio.garantia,
+                defeitoRelatado: laudoDataParaEnvio.defeitoRelatado.replace(/<br>/g, "\\n"),
+                obsTecnicas: laudoDataParaEnvio.obsTecnicas.replace(/<br>/g, "\\n") + anexosTecnicosStr,
+                obsGerais: laudoDataParaEnvio.obsGerais.replace(/<br>/g, "\\n"),
+                pecasSelecionadas: laudoDataParaEnvio.pecasSelecionadas
+              };
+
+              return fetch(GOOGLE_WEBAPP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
+              .then(r => r.text())
+              .then(txt => {
+                try {
+                  const res = JSON.parse(txt);
+                  if (!res.ok) {
+                    throw new Error(res.error || 'Erro desconhecido ao salvar na planilha');
+                  }
+                } catch (e) {}
+              });
+            }
+
+            function gerarNomeArquivoPdf() {
+              const limpar = (txt) => (txt || '').toString().trim().replace(/[^a-zA-Z0-9-_]+/g, '_');
+              return 'Laudo_' + limpar(laudoDataParaEnvio.ra) + '_' + limpar(laudoDataParaEnvio.cliente) + '.pdf';
+            }
+
+            function esperarImagensCarregarem(elemento) {
+              const imgs = Array.from(elemento.querySelectorAll('img'));
+              return Promise.all(imgs.map(img => {
+                if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+                return new Promise(resolve => {
+                  img.addEventListener('load', resolve);
+                  img.addEventListener('error', resolve);
+                  setTimeout(resolve, 5000); 
+                });
+              }));
+            }
+
+            async function gerarPdfBlob() {
+              const elemento = document.querySelector('.container');
+              await esperarImagensCarregarem(elemento);
+              
+              const botoes = document.querySelector('.button-container');
+              if (botoes) botoes.style.display = 'none';
+
+              const { jsPDF } = window.jspdf;
+              // Ajustes rígidos no jsPDF html() para bater com as dimensões do container exato
+              const doc = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'portrait' });
+              
+              return new Promise((resolve, reject) => {
+                doc.html(elemento, {
+                  callback: function (pdf) {
+                    if (botoes) botoes.style.display = 'block';
+                    resolve(pdf.output('blob'));
+                  },
+                  margin: [30, 30, 30, 30],
+                  autoPaging: 'text',
+                  width: 535, // Largura útil A4
+                  windowWidth: 800 // Largura engessada correspondente ao CSS
+                }).catch(err => {
+                    if (botoes) botoes.style.display = 'block';
+                    reject(err);
+                });
+              });
+            }
+
+            function extrairNumeroAgendamento(nomeCard) {
+              const texto = (nomeCard || '').toString().trim();
+              return texto.replace(/^agendamento\\s*:?\\s*/i, '').trim().toLowerCase();
+            }
+
+            async function buscarCardPorRA(ra) {
+              const url = 'https://api.trello.com/1/boards/' + TRELLO_CONFIG.BOARD_ID +
+                '/cards?fields=name,idList&key=' + TRELLO_CONFIG.KEY + '&token=' + TRELLO_CONFIG.TOKEN;
+              const resp = await fetch(url);
+              if (!resp.ok) {
+                throw new Error('Falha ao consultar cards do Trello');
+              }
+              const cards = await resp.json();
+              const raNormalizado = (ra || '').toString().trim().toLowerCase();
+              return cards.find(c => extrairNumeroAgendamento(c.name) === raNormalizado) || null;
+            }
+
+            async function anexarPdfNoCard(cardId, pdfBlob) {
+              const url = 'https://api.trello.com/1/cards/' + cardId +
+                '/attachments?key=' + TRELLO_CONFIG.KEY + '&token=' + TRELLO_CONFIG.TOKEN;
+              const nomeArquivo = gerarNomeArquivoPdf();
+              const formData = new FormData();
+              formData.append('file', pdfBlob, nomeArquivo);
+              formData.append('name', nomeArquivo);
+              const resp = await fetch(url, { method: 'POST', body: formData });
+              if (!resp.ok) {
+                throw new Error('Falha ao anexar PDF no Trello');
+              }
+              return resp.json();
+            }
+
+            async function salvarETrello() {
+              const btnSalvar = document.querySelector('.save-btn');
+              btnSalvar.disabled = true;
+
+              btnSalvar.textContent = 'Salvando na planilha...';
+              try {
+                await salvarNaPlanilha();
+              } catch (err) {
+                console.error(err);
+                alert('Falha ao salvar na planilha: ' + err.message);
+                btnSalvar.disabled = false;
+                btnSalvar.textContent = 'Salvar Dados';
+                return;
+              }
+
+              btnSalvar.textContent = 'Gerando PDF...';
+              let pdfBlob;
+              try {
+                pdfBlob = await gerarPdfBlob();
+              } catch (err) {
+                console.error(err);
+                alert('Dados salvos na planilha, mas houve falha ao gerar o PDF: ' + err.message);
+                btnSalvar.disabled = false;
+                btnSalvar.textContent = 'Salvar Dados';
+                return;
+              }
+
+              btnSalvar.textContent = 'Buscando card no Trello...';
+              try {
+                const card = await buscarCardPorRA(laudoDataParaEnvio.ra);
+                if (!card) {
+                  alert('Dados salvos e PDF gerado, mas nenhum card do Trello foi encontrado com o nome "' +
+                    laudoDataParaEnvio.ra + '". Anexe o PDF manualmente.');
+                  btnSalvar.textContent = 'Salvo (sem Trello)';
+                } else {
+                  btnSalvar.textContent = 'Anexando no Trello...';
+                  await anexarPdfNoCard(card.id, pdfBlob);
+                  alert('Dados salvos, PDF gerado e anexado com sucesso no card do Trello!');
+                  btnSalvar.textContent = 'Salvo com Sucesso!';
+                }
+              } catch (err) {
+                console.error(err);
+                alert('Dados salvos e PDF gerado, mas houve falha ao anexar no Trello: ' + err.message);
+                btnSalvar.textContent = 'Salvo (falha no Trello)';
+              }
+
+              btnSalvar.disabled = false;
+            }
+          <\/script>
+        </body>
+        </html>
+    `);
+    novaJanela.document.close();
 }
 </script>
 
@@ -840,7 +1186,6 @@ function gerarLaudo() {
         if (label) label.textContent = isDark ? "Modo claro" : "Modo noturno"; 
         localStorage.setItem("temaGeradorRelatorio", isDark ? "dark" : "light"); 
     }
-    // Set default base on localStorage or fallback to dark mode style like Source 2
     aplicarTema(localStorage.getItem("temaGeradorRelatorio") || "dark");
     btn.addEventListener("click", function() { aplicarTema(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark"); });
   }
